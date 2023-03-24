@@ -50,7 +50,6 @@ def main():
 
     # create dict to storage connection between nodes (tow directional)
     edges_bounds_dict = {str(i): set() for i in range(len(xml_nodes))}
-    print(edges_bounds_dict)
 
     # create dict for edges with distance and delay
     edges_distance_arr = dict()
@@ -63,7 +62,7 @@ def main():
         # else:
         #     edges_bounds_dict[str(node_1)] = {node_2}
         edges_bounds_dict[node_1].add(int(node_2))
-        # edges_bounds_dict[str(node_2)] += {node_1}
+        edges_bounds_dict[node_2].add(int(node_1))
 
         # print(edge.attrib['source'], edge.attrib['target'])
         # print(nodes_arr[node_1][0])
@@ -82,7 +81,14 @@ def main():
           "Distance (km),Delay(mks)", file=csv_file)
 
     for node, value in nodes_arr.items():
-        print(f"{int(node) + 1},{value['name']}", file=csv_file)
+        for node_2 in edges_bounds_dict[node]:
+            node_id = min(int(node), node_2)
+            node_2_id = max(int(node), node_2)
+            print(f"{int(node) + 1},{value['name']},{value['longitude']},{value['latitude']},"
+                  f"{int(node_2) + 1},{nodes_arr[str(node_2)]['name']},"
+                  f"{nodes_arr[str(node_2)]['longitude']},{nodes_arr[str(node_2)]['latitude']},"
+                  f"{edges_distance_arr[str(node_id) + ' ' + str(node_2_id)]['distance']:.4f},"
+                  f"{edges_distance_arr[str(node_id) + ' ' + str(node_2_id)]['delay']:.4f}", file=csv_file)
 
     csv_file.close()
 
