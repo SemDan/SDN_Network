@@ -42,20 +42,20 @@ def main():
     nodes_arr = dict()
     for node in xml_nodes:
         data_node_arr = node.findall('xml:data', namespaces)
-        # print(node.attrib['id'], data_node_arr[1].text, data_node_arr[5].text)
-        nodes_arr[node.attrib['id']] = {"name": data_node_arr[6].text}
-        nodes_arr[node.attrib['id']]["latitude"] = data_node_arr[1].text
-        nodes_arr[node.attrib['id']]["longitude"] = data_node_arr[5].text
-    print(nodes_arr)
+        # print(int(node.attrib['id']), data_node_arr[1].text, data_node_arr[5].text)
+        nodes_arr[int(node.attrib['id'])] = {"name": data_node_arr[6].text}
+        nodes_arr[int(node.attrib['id'])]["latitude"] = data_node_arr[1].text
+        nodes_arr[int(node.attrib['id'])]["longitude"] = data_node_arr[5].text
+    print("nodes arr", nodes_arr)
 
     # create dict to storage connection between nodes (tow directional)
-    edges_bounds_dict = {str(i): set() for i in range(len(xml_nodes))}
+    edges_bounds_dict = {int(i): set() for i in range(len(xml_nodes))}
 
     # create dict for edges with distance and delay
     edges_distance_arr = dict()
     for edge in xml_edges:
-        node_1 = edge.attrib['source']
-        node_2 = edge.attrib['target']
+        node_1 = int(edge.attrib['source'])
+        node_2 = int(edge.attrib['target'])
 
         # if type(edges_bounds_dict[str(node_1)]) == 'set':
         #     edges_bounds_dict[str(node_1)] += {node_2}
@@ -71,8 +71,8 @@ def main():
                                           nodes_arr[node_2]['latitude'], nodes_arr[node_2]['longitude'])
         edges_distance_arr[dict_edge_key] = {"distance": distance}
         edges_distance_arr[dict_edge_key]["delay"] = 4.8 * distance
-    print(edges_distance_arr)
-    print(edges_bounds_dict)
+    print("edge distance", edges_distance_arr)
+    print("edge bounds", edges_bounds_dict)
 
     # create CSV table
     csv_file = open(output_csv_file, 'w')
@@ -85,12 +85,49 @@ def main():
             node_id = min(int(node), node_2)
             node_2_id = max(int(node), node_2)
             print(f"{int(node) + 1},{value['name']},{value['longitude']},{value['latitude']},"
-                  f"{int(node_2) + 1},{nodes_arr[str(node_2)]['name']},"
-                  f"{nodes_arr[str(node_2)]['longitude']},{nodes_arr[str(node_2)]['latitude']},"
+                  f"{int(node_2) + 1},{nodes_arr[node_2]['name']},"
+                  f"{nodes_arr[node_2]['longitude']},{nodes_arr[node_2]['latitude']},"
                   f"{edges_distance_arr[str(node_id) + ' ' + str(node_2_id)]['distance']:.4f},"
                   f"{edges_distance_arr[str(node_id) + ' ' + str(node_2_id)]['delay']:.4f}", file=csv_file)
 
     csv_file.close()
+
+    # algorithm Deeikstry for all nodes
+    nodes_len = len(nodes_arr)
+
+    for node, data in nodes_arr.items():
+        nodes_set_s = {node}  # start node
+        nodes_set_begin = set(x for x in edges_bounds_dict[node])  # all nodes
+        target_nodes_len = len(nodes_set_begin)
+        print(nodes_set_begin)
+
+        # initialization distances
+        distances = [-1] * nodes_len
+        distances[node] = -2
+        for target_node in edges_bounds_dict[node]:
+            distances[target_node] = edges_distance_arr[str(min(node, target_node)) + ' ' +
+                                                        str(max(node, target_node))]["distance"]
+        print("start distances to nodes", distances)
+
+        for i in range(1, target_nodes_len):
+            min_distance = min(x for x in distances if (distances.index(x) in nodes_set_begin) and x > 0)
+            min_node = distances.index(min_distance)
+            nodes_set_s |= {min_node}
+            nodes_set_begin -= {min_node}
+
+            # print(nodes_set_s)
+            # print(nodes_set_begin)
+
+            for node_set in nodes_set_begin:
+                deep_distance = edges_distance_arr.get(str(min(min_node, node_set)) + ' ' +
+                                                       str(max(min_node, node_set)), {'distance': -1})["distance"]
+                # print(deep_distance)
+                if distances[node_set] == -1:
+                    distances[node_set] = deep_distance
+                else:
+                    distances[node_set] = min(distances[node_set], min_distance + deep_distance)
+
+        print("end   distances to nodes", distances)
 
 
 if __name__ == "__main__":
