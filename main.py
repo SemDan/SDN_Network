@@ -36,7 +36,7 @@ def alg_dijkstra(start, edges_bounds_dict, edges_distance_arr, nodes_arr):
     d = [math.inf] * nodes_len
     for target_node in edges_bounds_dict[started_node]:
         d[target_node] = edges_distance_arr[str(min(started_node, target_node)) + ' ' +
-                                            str(max(started_node, target_node))]['distance']
+                                            str(max(started_node, target_node))]['delay']
     # print("was", d)
 
     for _ in range(1, nodes_len):
@@ -54,7 +54,7 @@ def alg_dijkstra(start, edges_bounds_dict, edges_distance_arr, nodes_arr):
             find_key = str(min(w, v_node)) + ' ' + str(max(w, v_node))
             # print(f"from {w} to {v_node}, key: {find_key}")
             new_distance = edges_distance_arr.get(find_key,
-                                                  {'distance': math.inf})['distance']
+                                                  {'delay': math.inf})['delay']
             d[v_node] = min(d[v_node], d[w] + new_distance)
             # if w == 7 and v_node == 4:
             #     print("+++++++++++ I am here", find_key)
@@ -150,65 +150,26 @@ def main():
     print()
     print()
 
-    # algorithm Dijkstra for all nodes
+    # apply algorithm Dijkstra for all nodes
+    # and find min from max distances from all nodes if put router in all node alternately
+    min_delay = math.inf
+    min_delay_index = None
     for i in nodes_arr.keys():
         d = alg_dijkstra(i, edges_bounds_dict, edges_distance_arr, nodes_arr)
-        print(d)
+        max_delay = 0
+        max_delay_index = None
+        for delay, index in enumerate(d):
+            if delay > max_delay:
+                max_delay = delay
+                max_delay_index = index
 
-    # for node, data in nodes_arr.items():
-    #     print("#### find from", node)
-    #     nodes_set_s = {node}  # start node
-    #     nodes_set_begin = set(x for x in nodes_arr.keys()) - nodes_set_s  # all nodes
-    #     target_nodes_len = len(nodes_set_begin)
-    #     print("S:", nodes_set_s)
-    #     print("all\S:", nodes_set_begin)
-    #
-    #     # initialization distances
-    #     distances = [-1] * nodes_len
-    #     distances[node] = -2
-    #     for target_node in edges_bounds_dict[node]:
-    #         distances[target_node] = edges_distance_arr[str(min(node, target_node)) + ' ' +
-    #                                                     str(max(node, target_node))]["distance"]
-    #     print("start distances to nodes", distances)
-    #
-    #     for i in range(1, target_nodes_len):
-    #         rest_distances = {distances.index(x): x for x in distances if
-    #                           (distances.index(x) in nodes_set_begin) and x > 0}
-    #         print("rest distances", rest_distances)
-    #         min_distance = min(x for x in rest_distances.values())
-    #         min_node = distances.index(min_distance)
-    #         print("min dist index", min_node, "min dist", min_distance)
-    #         nodes_set_s |= {min_node}
-    #         nodes_set_begin -= {min_node}
-    #
-    #         print("######## started", node, "iter", i)
-    #         print(nodes_set_s)
-    #         print(nodes_set_begin)
-    #
-    #         for node_set in nodes_set_begin:
-    #             deep_distance = edges_distance_arr.get(str(min(min_node, node_set)) + ' ' +
-    #                                                    str(max(min_node, node_set)), {'distance': -1})["distance"]
-    #             print(str(min(min_node, node_set)) + ' ' +
-    #                                                    str(max(min_node, node_set)) in edges_distance_arr, deep_distance)
-    #             print(edges_distance_arr)
-    #             print(min_node, "to", node_set)
-    #             if deep_distance == -1:
-    #                 print("\t++++++++++++ с текущего узла не дойти", node_set)
-    #             if distances[node_set] == -1:
-    #                 print("\t---------- в таблице до сих пор бесконечность", node_set)
-    #             if distances[node_set] == -1 and deep_distance != -1:
-    #                 distances[node_set] = deep_distance
-    #                 print("дошли по новому узлу", deep_distance, edges_distance_arr.get(deep_distance))
-    #             elif deep_distance != -1 and distances[node_set] != -1:
-    #                 prev = distances[node_set]
-    #                 distances[node_set] = min(distances[node_set], min_distance + deep_distance)
-    #                 print("дошли по минимальному", node_set, distances[node_set], "=min(", prev, ", ", min_distance, "+", deep_distance)
-    #             else:
-    #                 distances[node_set] = -1
-    #                 print("дойти не получилось")
-    #         print("cur distance", distances)
-    #
-    #     print("end   distances to nodes", distances)
+        if max_delay < min_delay:
+            min_delay = max_delay
+            min_delay_index = max_delay_index
+        print(d)
+    print(f"{min_delay_index} : {min_delay}") # res for K1
+
+    
 
 
 if __name__ == "__main__":
