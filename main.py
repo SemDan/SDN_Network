@@ -65,6 +65,88 @@ def alg_dijkstra(start, edges_bounds_dict, edges_distance_arr, nodes_arr):
     return d
 
 
+# Combine components A and B from set C - набор компонент
+def merge(A, B, C):
+    for node in C[B]:
+        C[A] |= {node}
+    del C[B]
+
+
+# Return name of the component from C, which have this node
+def find(v, C):
+    for component, nodes in C.items():
+        for node in nodes:
+            if v == node:
+                return component
+    return None
+
+
+# Create from set C new component A, which has only one node v
+def initial(A, v, C=None):
+    if C is None:
+        C = dict()
+
+    val = C.get(A)
+    if val is None:
+        C[A] = {v}
+    else:
+        C[A] |= {v}
+
+    return C
+
+
+# V - множество вершин E и T - множество дуг
+# nsomp текущее количество компонент
+# edges - сортированные edge
+# components - множество V сгрупированное во множество компонент
+def Kruskal(V, E):
+    T = dict()
+    edges = set()
+    nextcomp = 0
+    ncomp = len(V)
+    components = dict()
+
+    for v in V:
+        nextcomp += 1
+        components = initial(nextcomp, v, components)
+    print("C", components)
+    # for e in E:
+    #     INSERT(e, edges)
+
+    while ncomp > 1:
+        e = E[0]
+        del E[0]
+        # print("take", e)
+        # print("was", components)
+        # u v inzedentno
+        u, v = [int(x) for x in e['key'].split()]
+        ucomp = find(u, components)
+        vcomp = find(v, components)
+        # print(ucomp, vcomp)
+        if ucomp != vcomp:
+            merge(ucomp, vcomp, components)
+            # print("becom", len(components), components)
+            ncomp -= 1
+            if T.get(v) is None:
+                T[v] = {u}
+            else:
+                T[v] |= {u}
+
+            if T.get(u) is None:
+                T[u] = {v}
+            else:
+                T[u] |= {v}
+            # print("res edges", len(T.values()), T)
+    return T
+
+
+def count_edges(edges: dict):
+    c = 0
+    for node, target_nodes in edges.items():
+        c += len(target_nodes)
+    return c
+
+
 def main():
     tree = ET.parse(input_data_filename)
     root = tree.getroot()
@@ -121,7 +203,7 @@ def main():
         edges_distance_arr[dict_edge_key] = {"distance": distance}
         edges_distance_arr[dict_edge_key]["delay"] = 4.8 * distance
     print("edge distance", edges_distance_arr)
-    print("edge bounds", edges_bounds_dict)
+    print(f"edge bounds ({len(edges_bounds_dict.values())})", edges_bounds_dict)
 
     # create a connectivty graph table
     nodes_len = len(nodes_arr)
@@ -150,6 +232,7 @@ def main():
     print()
     print()
 
+    # K1
     # apply algorithm Dijkstra for all nodes
     # and find min from max distances from all nodes if put router in all node alternately
     min_delay = math.inf
@@ -166,10 +249,22 @@ def main():
         if max_delay < min_delay:
             min_delay = max_delay
             min_delay_index = max_delay_index
-        print(d)
-    print(f"{min_delay_index} : {min_delay}") # res for K1
+        # print(d)
+    print(f"{min_delay_index} : {min_delay}")  # res for K1
 
-    
+    # K2
+    # apply once algorithm Kroskala and aplay Dijkstra for all nodes
+    print(type(edges_distance_arr))
+    E = [{'key': key, 'delay': value['delay']} for key, value in edges_distance_arr.items()]
+    E.sort(key=lambda x: x['delay'])
+    print(E)
+    E = Kruskal(nodes_arr, E)
+    print(f"({count_edges(E)}) {E}")
+    print(f"({count_edges(edges_bounds_dict)}) {edges_bounds_dict}")
+
+    visited = dfs(E, 0)
+    print(f"{len(visited)} => граф остался связным")
+    print(f"{alg_dijkstra(0, E, edges_distance_arr, nodes_arr)}")
 
 
 if __name__ == "__main__":
